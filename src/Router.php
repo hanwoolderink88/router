@@ -3,6 +3,7 @@
 namespace Hanwoolderink88\Router;
 
 use Psr\Http\Message\ResponseInterface;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
 
@@ -48,7 +49,7 @@ class Router
                     }
                     $p[] = $value;
                 } else {
-                    $p[] = null;
+                    $p[] = new $param['type'];
                 }
             }
 
@@ -100,7 +101,12 @@ class Router
         return null;
     }
 
-    private function getFunctionParams(Route $route)
+    /**
+     * @param Route $route
+     * @return mixed[][]
+     * @throws ReflectionException
+     */
+    private function getFunctionParams(Route $route): array
     {
         $callable = $route->getCallable();
         if (is_array($callable)) {
@@ -115,6 +121,7 @@ class Router
         foreach ($fParams as $fParam) {
             $params[] = [
                 'name' => $fParam->getName(),
+                /** @phpstan-ignore-next-line */
                 'type' => $fParam->getType() ? $fParam->getType()->getName() : null,
                 'nullable' => $fParam->allowsNull()
             ];
@@ -123,7 +130,12 @@ class Router
         return $params;
     }
 
-    private function getWildcardValues(string $path, string $routePath)
+    /**
+     * @param string $path
+     * @param string $routePath
+     * @return string[]
+     */
+    private function getWildcardValues(string $path, string $routePath): array
     {
         $pathParts = explode('/', $path);
         $routeParts = explode('/', $routePath);

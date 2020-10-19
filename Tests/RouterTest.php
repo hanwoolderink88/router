@@ -42,7 +42,12 @@ class RouterTest extends TestCase
         $this->assertEquals($expect, $responseBody, 'not matching response bodies');
     }
 
-    public function routerResponse( $hi, string $id, ?RouterTest $routerTest): ResponseInterface
+    /**
+     * @param string $hi
+     * @param string $id
+     * @return ResponseInterface
+     */
+    public function routerResponse($hi, string $id): ResponseInterface
     {
         $response = new Response(['foo' => 'bar', 'id' => $id, 'hi' => $hi]);
         $added = $response->withHeader('X-TEST', 'JHIE');
