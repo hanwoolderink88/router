@@ -2,6 +2,7 @@
 
 namespace Hanwoolderink88\Router;
 
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionException;
 use ReflectionFunction;
@@ -14,7 +15,15 @@ class Router
      */
     private array $routes = [];
 
+    /**
+     * @var ResponseInterface|null
+     */
     private ?ResponseInterface $response404 = null;
+
+    /**
+     * @var ContainerInterface|null
+     */
+    private ?ContainerInterface $container;
 
     /**
      * @return Route[]
@@ -33,6 +42,41 @@ class Router
         $this->routes = $routes;
 
         return $this;
+    }
+
+    /**
+     * @return ResponseInterface|null
+     */
+    public function getResponse404(): ?ResponseInterface
+    {
+        return $this->response404;
+    }
+
+    /**
+     * @param ResponseInterface $response404
+     * @return Router
+     */
+    public function setResponse404(ResponseInterface $response404): Router
+    {
+        $this->response404 = $response404;
+
+        return $this;
+    }
+
+    /**
+     * @return ContainerInterface|null
+     */
+    public function getContainer(): ?ContainerInterface
+    {
+        return $this->container;
+    }
+
+    /**
+     * @param ContainerInterface|null $container
+     */
+    public function setContainer(?ContainerInterface $container): void
+    {
+        $this->container = $container;
     }
 
     /**
@@ -138,25 +182,6 @@ class Router
     }
 
     /**
-     * @return ResponseInterface|null
-     */
-    public function getResponse404(): ?ResponseInterface
-    {
-        return $this->response404;
-    }
-
-    /**
-     * @param ResponseInterface $response404
-     * @return Router
-     */
-    public function setResponse404(ResponseInterface $response404): Router
-    {
-        $this->response404 = $response404;
-
-        return $this;
-    }
-
-    /**
      * @param Route $route
      * @param string[] $pathParts
      * @return mixed[]
@@ -170,19 +195,25 @@ class Router
 
         $p = [];
         foreach ($params as $param) {
-            $isWildcardKey = ($param['type'] === 'string' || $param['type'] === null);
-            if ($isWildcardKey) {
-                $isNullable = $param['nullable'];
+            $isWildcardParam = ($param['type'] === 'string' || $param['type'] === null);
+            $isNullable = $param['nullable'];
+            $value = null;
+
+            if ($isWildcardParam) {
+                // a wildcard param is defined in the route path by /{name}
                 $value = $wildcards[$param['name']] ?? null;
-                if ($value === null && $isNullable === false) {
-                    $msg = "Callback has property {$param['name']} but no wildcard found with that name";
-                    throw new RouterMatchException($msg);
-                }
-                $p[] = $value;
-            } else {
-                // todo: DI
-                $p[] = new $param['type'];
+            } elseif ($this->container !== null && $this->container->has($param['type'])) {
+                // (johnny) Dep inject
+                $value = $this->container->get($param['type']);
             }
+
+            if ($value === null && $isNullable === false) {
+                $name = $param['name'];
+                $msg = "Callback function has argument with name \"{$name}\" but no wildcard or DI service was found";
+                throw new RouterMatchException($msg);
+            }
+
+            $p[] = $value;
         }
 
         return $p;
