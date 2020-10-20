@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Hanwoolderink88\Router\Response;
+use GuzzleHttp\Psr7\Response;
 use Hanwoolderink88\Router\Route;
 use Hanwoolderink88\Router\Router;
 use PHPUnit\Framework\TestCase;
@@ -15,7 +15,7 @@ class RouterTest extends TestCase
         $router = new Router();
 
         $route = new Route('/', 'home', ['GET'], function () {
-            return new Response(['foo' => 'bar']);
+            return new Response(200, [], 'jhie');
         });
         $router->addRoute($route);
 
@@ -24,7 +24,7 @@ class RouterTest extends TestCase
 
         $responseBody = $response->getBody()->__tostring();
 
-        $this->assertEquals(json_encode(['foo' => 'bar']), $responseBody, 'not matching response bodies');
+        $this->assertEquals('jhie', $responseBody, 'not matching response bodies');
     }
 
     public function testWildcardRouting(): void
@@ -49,9 +49,6 @@ class RouterTest extends TestCase
      */
     public function routerResponse($hi, string $id): ResponseInterface
     {
-        $response = new Response(['foo' => 'bar', 'id' => $id, 'hi' => $hi]);
-        $added = $response->withHeader('X-TEST', 'JHIE');
-
-        return $added;
+        return new Response(200, [], json_encode(['foo' => 'bar', 'id' => $id, 'hi' => $hi]));
     }
 }

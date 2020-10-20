@@ -15,6 +15,16 @@ class Route
     private string $path;
 
     /**
+     * @var RoutePart[]|null
+     */
+    private ?array $routeParts = null;
+
+    /**
+     * @var bool
+     */
+    private bool $wildcard;
+
+    /**
      * @var string
      */
     private string $name;
@@ -33,10 +43,14 @@ class Route
      */
     public function __construct(string $path, string $name, array $methods, callable $callable)
     {
-        $this->path = $path;
-        $this->name = $name ?? $path;
+        $this->path = rtrim(ltrim($path, '/'), '/');
+        $this->name = $name ?? $this->path;
         $this->callable = $callable;
         $this->methods = $methods;
+        $this->wildcard = strpos($this->path, '{') !== false;
+        if ($this->wildcard === true) {
+            $this->routeParts = array_map(fn($part) => new RoutePart($part), explode('/', $this->path));
+        }
     }
 
     /**
@@ -48,33 +62,11 @@ class Route
     }
 
     /**
-     * @param string[] $methods
-     * @return $this
-     */
-    public function setMethods(array $methods)
-    {
-        $this->methods = $methods;
-
-        return $this;
-    }
-
-    /**
      * @return string
      */
     public function getPath(): string
     {
         return $this->path;
-    }
-
-    /**
-     * @param string $path
-     * @return Route
-     */
-    public function setPath(string $path): Route
-    {
-        $this->path = $path;
-
-        return $this;
     }
 
     /**
@@ -86,17 +78,6 @@ class Route
     }
 
     /**
-     * @param string $name
-     * @return Route
-     */
-    public function setName(string $name): Route
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    /**
      * @return callable
      */
     public function getCallable(): callable
@@ -105,13 +86,18 @@ class Route
     }
 
     /**
-     * @param callable $callable
-     * @return Route
+     * @return RoutePart[]|null
      */
-    public function setCallable(callable $callable): Route
+    public function getRouteParts(): ?array
     {
-        $this->callable = $callable;
+        return $this->routeParts;
+    }
 
-        return $this;
+    /**
+     * @return bool
+     */
+    public function hasWildcard(): bool
+    {
+        return $this->wildcard;
     }
 }

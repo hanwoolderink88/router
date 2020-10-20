@@ -14,12 +14,48 @@ class Router
      */
     private array $routes = [];
 
+    private ?ResponseInterface $response404 = null;
+
+    /**
+     * @return Route[]
+     */
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
+
+    /**
+     * @param Route[] $routes
+     * @return Router
+     */
+    public function setRoutes(array $routes): Router
+    {
+        $this->routes = $routes;
+
+        return $this;
+    }
+
     /**
      * @param Route $route
      * @return $this
+     * @throws RouterAddRouteException
      */
     public function addRoute(Route $route): self
     {
+        $i = 0;
+        foreach ($this->routes as $registeredRoute) {
+            if ($registeredRoute->getPath() === $route->getPath()) {
+                throw new RouterAddRouteException("route with path \"{$route->getPath()}}\" already exists");
+            }
+
+            // overwrite/remove routes with the same name
+            if ($registeredRoute->getName() === $route->getName()) {
+                unset($this->routes[$i]);
+            }
+
+            $i++;
+        }
+
         $this->routes[] = $route;
 
         return $this;
@@ -29,43 +65,41 @@ class Router
      * @param string $path
      * @param string $method
      * @return ResponseInterface
+     * @throws ReflectionException|RouterMatchException
      */
     public function match(string $path, string $method): ResponseInterface
     {
-        $route = $this->findMatch($path, $method);
-        if ($route !== null) {
-            $params = $this->getFunctionParams($route);
-            $wildcards = $this->getWildcardValues($path, $route->getPath());
+        // standardise path
+        $path = rtrim(ltrim($path, '/'), '/');
+        $pathParts = explode('/', $path);
 
-            $p = [];
-            foreach ($params as $param) {
-                $isWildcardKey = $param['type'] === 'string' || $param['type'] === null;
-                $isNullable = $param['nullable'];
-                if ($isWildcardKey) {
-                    $value = $wildcards[$param['name']] ?? null;
-                    if ($value === null && $isNullable === false) {
-                        // todo: throw error?
-                        $value = '';
-                    }
-                    $p[] = $value;
-                } else {
-                    $p[] = new $param['type'];
-                }
+        // Find a matching route
+        $route = $this->findMatch($path, $pathParts, $method);
+
+        // return a 404 if the route is not found
+        if ($route === null) {
+            $response404 = $this->getResponse404();
+            if ($response404 === null) {
+                throw new RouterMatchException('No 404 route is specified in the router');
             }
 
-            return call_user_func_array($route->getCallable(), $p);
+            return $response404;
         }
 
-        // todo
-        return new Response('404', 404, ['X-TEST' => ['Foo']]);
+        // Param matching for wildcards and DI
+        $params = $this->matchParams($route, $pathParts);
+
+        // call the callback function of the matched route with the
+        return call_user_func_array($route->getCallable(), $params);
     }
 
     /**
      * @param string $path
+     * @param string[] $pathParts
      * @param string $method
      * @return Route|null
      */
-    private function findMatch(string $path, string $method): ?Route
+    private function findMatch(string $path, array $pathParts, string $method): ?Route
     {
         // find direct match
         foreach ($this->routes as $route) {
@@ -75,23 +109,25 @@ class Router
         }
 
         // find match with wildcard(s)
-        $pathParts = explode('/', $path);
         foreach ($this->routes as $route) {
-            if (strpos($route->getPath(), '{') !== false) {
-                $parts = explode('/', $route->getPath());
+            if ($route->hasWildcard()) {
+                $parts = $route->getRouteParts();
                 $matches = true;
                 $i = 0;
                 foreach ($parts as $part) {
-                    if (strpos($part, '{') !== false) {
+                    // if the part is a wildcard it does not have to match
+                    if ($part->isWildcard()) {
                         continue;
                     }
 
-                    if ($part !== $pathParts[$i]) {
+                    // if the part is not a wildcard is does have to match
+                    if ($part->getString() !== $pathParts[$i]) {
                         $matches = false;
                         break;
                     }
                 }
 
+                // if the boolean is still on true we have a match
                 if ($matches === true) {
                     return $route;
                 }
@@ -99,6 +135,57 @@ class Router
         }
 
         return null;
+    }
+
+    /**
+     * @return ResponseInterface|null
+     */
+    public function getResponse404(): ?ResponseInterface
+    {
+        return $this->response404;
+    }
+
+    /**
+     * @param ResponseInterface $response404
+     * @return Router
+     */
+    public function setResponse404(ResponseInterface $response404): Router
+    {
+        $this->response404 = $response404;
+
+        return $this;
+    }
+
+    /**
+     * @param Route $route
+     * @param string[] $pathParts
+     * @return mixed[]
+     * @throws ReflectionException
+     * @throws RouterMatchException
+     */
+    private function matchParams(Route $route, array $pathParts): array
+    {
+        $params = $this->getFunctionParams($route);
+        $wildcards = $route->hasWildcard() ? $this->getWildcardValues($pathParts, $route->getRouteParts()) : [];
+
+        $p = [];
+        foreach ($params as $param) {
+            $isWildcardKey = ($param['type'] === 'string' || $param['type'] === null);
+            if ($isWildcardKey) {
+                $isNullable = $param['nullable'];
+                $value = $wildcards[$param['name']] ?? null;
+                if ($value === null && $isNullable === false) {
+                    $msg = "Callback has property {$param['name']} but no wildcard found with that name";
+                    throw new RouterMatchException($msg);
+                }
+                $p[] = $value;
+            } else {
+                // todo: DI
+                $p[] = new $param['type'];
+            }
+        }
+
+        return $p;
     }
 
     /**
@@ -131,21 +218,17 @@ class Router
     }
 
     /**
-     * @param string $path
-     * @param string $routePath
+     * @param string[] $pathParts
+     * @param RoutePart[] $routeParts
      * @return string[]
      */
-    private function getWildcardValues(string $path, string $routePath): array
+    private function getWildcardValues(array $pathParts, array $routeParts): array
     {
-        $pathParts = explode('/', $path);
-        $routeParts = explode('/', $routePath);
-
         $wildcards = [];
         $i = 0;
         foreach ($routeParts as $part) {
-            if (strpos($part, '{') !== false) {
-                $key = str_replace(['{', '}'], '', $part);
-                $wildcards[$key] = $pathParts[$i];
+            if ($part->isWildcard()) {
+                $wildcards[$part->getString()] = $pathParts[$i];
             }
             $i++;
         }
