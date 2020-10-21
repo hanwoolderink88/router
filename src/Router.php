@@ -156,7 +156,7 @@ class Router
 
         // find match with wildcard(s)
         foreach ($this->routes as $route) {
-            if ($route->hasWildcard() || !in_array($method, $route->getMethods(), true)) {
+            if ($route->hasWildcard() && in_array($method, $route->getMethods(), true)) {
                 $parts = $route->getRouteParts();
                 $matches = true;
                 $i = 0;
