@@ -160,14 +160,23 @@ class Router
                 $parts = $route->getRouteParts();
                 $matches = true;
                 $i = 0;
-                foreach ($parts as $part) {
+                foreach ($pathParts as $pathPart) {
+                    $part = $parts[$i] ?? null;
+                    $i++;
+
+                    //
+                    if ($part === null) {
+                        $matches = false;
+                        break;
+                    }
+
                     // if the part is a wildcard it does not have to match
                     if ($part->isWildcard()) {
                         continue;
                     }
 
                     // if the part is not a wildcard is does have to match
-                    if ($part->getString() !== $pathParts[$i]) {
+                    if ($part->getString() !== $pathPart) {
                         $matches = false;
                         break;
                     }
