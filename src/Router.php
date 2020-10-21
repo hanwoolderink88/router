@@ -7,6 +7,7 @@ use Psr\Http\Message\ResponseInterface;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
+use function in_array;
 
 class Router
 {
@@ -88,7 +89,8 @@ class Router
     {
         $i = 0;
         foreach ($this->routes as $registeredRoute) {
-            if ($registeredRoute->getPath() === $route->getPath()) {
+            $sharedMethods = array_intersect($route->getMethods(), $registeredRoute->getMethods());
+            if ($registeredRoute->getPath() === $route->getPath() && count($sharedMethods) > 0) {
                 throw new RouterAddRouteException("route with path \"{$route->getPath()}}\" already exists");
             }
 
@@ -154,7 +156,7 @@ class Router
 
         // find match with wildcard(s)
         foreach ($this->routes as $route) {
-            if ($route->hasWildcard()) {
+            if ($route->hasWildcard() || !in_array($method, $route->getMethods(), true)) {
                 $parts = $route->getRouteParts();
                 $matches = true;
                 $i = 0;
