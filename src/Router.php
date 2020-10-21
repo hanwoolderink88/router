@@ -164,7 +164,7 @@ class Router
                     $part = $parts[$i] ?? null;
                     $i++;
 
-                    //
+                    // if the part is not found it means that the request uri has more parts i.e. no match
                     if ($part === null) {
                         $matches = false;
                         break;
