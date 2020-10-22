@@ -3,6 +3,7 @@
 namespace Tests;
 
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\ServerRequest;
 use HanWoolderink88\Container\Container;
 use Hanwoolderink88\Router\Route;
 use Hanwoolderink88\Router\Router;
@@ -20,8 +21,8 @@ class RouterTest extends TestCase
         });
         $router->addRoute($route);
 
-        $path = '/';
-        $response = $router->match($path, 'GET');
+        $request = new ServerRequest('GET', '/');
+        $response = $router->handle($request);
 
         $responseBody = $response->getBody()->__tostring();
 
@@ -35,8 +36,8 @@ class RouterTest extends TestCase
         $route = new Route('/{id}/{hi}', 'home', ['GET'], [$this, 'routerResponse']);
         $router->addRoute($route);
 
-        $path = '/test/han';
-        $response = $router->match($path, 'GET');
+        $request = new ServerRequest('GET', '/test/han');
+        $response = $router->handle($request);
         $responseBody = $response->getBody()->__tostring();
 
         $expect = json_encode(['id' => 'test', 'hi' => 'han']);
@@ -55,15 +56,13 @@ class RouterTest extends TestCase
         $route = new Route('/', 'home', ['GET'], [$this, 'routerResponseDi']);
         $router->addRoute($route);
 
-        $path = '/';
-        $response = $router->match($path, 'GET');
+        $request = new ServerRequest('GET', '/');
+        $response = $router->handle($request);
         $responseBody = $response->getBody()->__tostring();
 
         $expect = json_encode(['foo' => 'bar']);
         $this->assertEquals($expect, $responseBody, 'not matching response bodies');
     }
-
-    // Router, DI, Cache (object),
 
     /**
      * @param string $hi

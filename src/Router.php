@@ -4,11 +4,13 @@ namespace Hanwoolderink88\Router;
 
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
 
-class Router
+class Router implements RequestHandlerInterface
 {
     /**
      * @var Route[]
@@ -105,20 +107,14 @@ class Router
         return $this;
     }
 
-    /**
-     * @param string $path
-     * @param string $method
-     * @return ResponseInterface
-     * @throws ReflectionException|RouterMatchException
-     */
-    public function match(string $path, string $method): ResponseInterface
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         // standardise path
-        $path = rtrim(ltrim($path, '/'), '/');
+        $path = rtrim(ltrim($request->getUri(), '/'), '/');
         $pathParts = explode('/', $path);
 
         // Find a matching route
-        $route = $this->findMatch($path, $pathParts, $method);
+        $route = $this->findMatch($path, $pathParts, $request->getMethod());
 
         // return a 404 if the route is not found
         if ($route === null) {
