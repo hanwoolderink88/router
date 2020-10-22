@@ -9,6 +9,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionMethod;
+use function in_array;
 
 class Router implements RequestHandlerInterface
 {
@@ -90,7 +91,8 @@ class Router implements RequestHandlerInterface
     {
         $i = 0;
         foreach ($this->routes as $registeredRoute) {
-            if ($registeredRoute->getPath() === $route->getPath()) {
+            $sharedMethods = array_intersect($route->getMethods(), $registeredRoute->getMethods());
+            if ($registeredRoute->getPath() === $route->getPath() && count($sharedMethods) > 0) {
                 throw new RouterAddRouteException("route with path \"{$route->getPath()}}\" already exists");
             }
 
@@ -150,18 +152,27 @@ class Router implements RequestHandlerInterface
 
         // find match with wildcard(s)
         foreach ($this->routes as $route) {
-            if ($route->hasWildcard()) {
+            if ($route->hasWildcard() && in_array($method, $route->getMethods(), true)) {
                 $parts = $route->getRouteParts();
                 $matches = true;
                 $i = 0;
-                foreach ($parts as $part) {
+                foreach ($pathParts as $pathPart) {
+                    $part = $parts[$i] ?? null;
+                    $i++;
+
+                    // if the part is not found it means that the request uri has more parts i.e. no match
+                    if ($part === null) {
+                        $matches = false;
+                        break;
+                    }
+
                     // if the part is a wildcard it does not have to match
                     if ($part->isWildcard()) {
                         continue;
                     }
 
                     // if the part is not a wildcard is does have to match
-                    if ($part->getString() !== $pathParts[$i]) {
+                    if ($part->getString() !== $pathPart) {
                         $matches = false;
                         break;
                     }

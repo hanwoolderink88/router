@@ -15,9 +15,9 @@ class Route
     private string $path;
 
     /**
-     * @var RoutePart[]|null
+     * @var RoutePart[]
      */
-    private ?array $routeParts = null;
+    private array $routeParts = [];
 
     /**
      * @var bool
@@ -86,9 +86,9 @@ class Route
     }
 
     /**
-     * @return RoutePart[]|null
+     * @return RoutePart[]
      */
-    public function getRouteParts(): ?array
+    public function getRouteParts(): array
     {
         return $this->routeParts;
     }
