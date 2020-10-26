@@ -107,17 +107,25 @@ class Router implements RequestHandlerInterface
 
         // Param matching for wildcards and DI
         $params = $this->matchParams($route, $pathParts);
+        $callable = null;
 
         // callable could be DI
         if ($this->getContainer() !== null && is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
             $obj = $this->getContainer()->get($route->getCallable()[0]);
-            $method = $route->getCallable()[1];
-            $callable = [$obj, $method];
-        } elseif (is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
-            $className = $route->getCallable()[0];
-            $callable = [new $className(), $route->getCallable()[1]];
-        } else {
-            $callable = $route->getCallable();
+            if ($obj !== null) {
+                $method = $route->getCallable()[1];
+                $callable = [$obj, $method];
+            }
+        }
+
+        // if no Di object is found try and create an object
+        if ($callable === null) {
+            if (is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
+                $className = $route->getCallable()[0];
+                $callable = [new $className(), $route->getCallable()[1]];
+            } else {
+                $callable = $route->getCallable();
+            }
         }
 
         // call the callback function of the matched route with the
