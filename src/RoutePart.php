@@ -7,12 +7,12 @@ class RoutePart
     /**
      * @var string
      */
-    private string $string;
+    protected string $string;
 
     /**
      * @var bool
      */
-    private bool $isWildcard = false;
+    protected bool $isWildcard = false;
 
     /**
      * RoutePart constructor.
@@ -37,32 +37,10 @@ class RoutePart
     }
 
     /**
-     * @param string|string[] $string
-     * @return RoutePart
-     */
-    public function setString($string)
-    {
-        $this->string = $string;
-
-        return $this;
-    }
-
-    /**
      * @return bool
      */
     public function isWildcard(): bool
     {
         return $this->isWildcard;
-    }
-
-    /**
-     * @param bool $isWildcard
-     * @return RoutePart
-     */
-    public function setIsWildcard(bool $isWildcard): RoutePart
-    {
-        $this->isWildcard = $isWildcard;
-
-        return $this;
     }
 }

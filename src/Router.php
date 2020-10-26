@@ -16,17 +16,17 @@ class Router implements RequestHandlerInterface
     /**
      * @var Route[]
      */
-    private array $routes = [];
+    protected array $routes = [];
 
     /**
      * @var ResponseInterface|null
      */
-    private ?ResponseInterface $response404 = null;
+    protected ?ResponseInterface $response404 = null;
 
     /**
      * @var ContainerInterface|null
      */
-    private ?ContainerInterface $container;
+    protected ?ContainerInterface $container;
 
     /**
      * @return Route[]
@@ -39,10 +39,94 @@ class Router implements RequestHandlerInterface
     /**
      * @param Route[] $routes
      * @return Router
+     * @throws RouterAddRouteException
      */
     public function setRoutes(array $routes): Router
     {
-        $this->routes = $routes;
+        $this->routes = [];
+
+        $this->addRoutes($routes);
+
+        return $this;
+    }
+
+    /**
+     * @param Route[] $routes
+     * @return $this
+     * @throws RouterAddRouteException
+     */
+    public function addRoutes(array $routes): Router
+    {
+        foreach ($routes as $route){
+            $this->addRoute($route);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param Route $route
+     * @return $this
+     * @throws RouterAddRouteException
+     */
+    public function addRoute(Route $route): self
+    {
+        $routes = $this->getRoutes();
+        foreach ($routes as $registeredRoute) {
+            $sharedMethods = array_intersect($route->getMethods(), $registeredRoute->getMethods());
+            if ($registeredRoute->getPath() === $route->getPath() && count($sharedMethods) > 0) {
+                throw new RouterAddRouteException("route with path \"/{$route->getPath()}\" already exists");
+            }
+
+            // overwrite/remove routes with the same name
+            if ($registeredRoute->getName() === $route->getName()) {
+                $this->removeRoute($registeredRoute);
+            }
+        }
+
+        $this->routes[] = $route;
+
+        return $this;
+    }
+
+    /**
+     * @param Route $route
+     * @return $this
+     */
+    public function removeRoute(Route $route): self
+    {
+        $max = count($this->routes);
+        for ($i = 0; $i < $max; $i++) {
+            $foundRoute = $this->routes[$i];
+            if ($foundRoute->getName() === $route->getName()) {
+                unset($this->routes[$i]);
+                reset($this->routes);
+
+                // as names are unique we can break;
+                break;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @return $this
+     */
+    public function removeRouteByName(string $name): self
+    {
+        $max = count($this->routes);
+        for ($i = 0; $i < $max; $i++) {
+            $foundRoute = $this->routes[$i];
+            if ($foundRoute->getName() === $name) {
+                unset($this->routes[$i]);
+                reset($this->routes);
+
+                // as names are unique we can break;
+                break;
+            }
+        }
 
         return $this;
     }
@@ -71,7 +155,7 @@ class Router implements RequestHandlerInterface
      */
     public function getContainer(): ?ContainerInterface
     {
-        return $this->container;
+        return $this->container ?? null;
     }
 
     /**
@@ -80,33 +164,6 @@ class Router implements RequestHandlerInterface
     public function setContainer(?ContainerInterface $container): void
     {
         $this->container = $container;
-    }
-
-    /**
-     * @param Route $route
-     * @return $this
-     * @throws RouterAddRouteException
-     */
-    public function addRoute(Route $route): self
-    {
-        $i = 0;
-        foreach ($this->routes as $registeredRoute) {
-            $sharedMethods = array_intersect($route->getMethods(), $registeredRoute->getMethods());
-            if ($registeredRoute->getPath() === $route->getPath() && count($sharedMethods) > 0) {
-                throw new RouterAddRouteException("route with path \"{$route->getPath()}}\" already exists");
-            }
-
-            // overwrite/remove routes with the same name
-            if ($registeredRoute->getName() === $route->getName()) {
-                unset($this->routes[$i]);
-            }
-
-            $i++;
-        }
-
-        $this->routes[] = $route;
-
-        return $this;
     }
 
     /**
@@ -128,7 +185,7 @@ class Router implements RequestHandlerInterface
         if ($route === null) {
             $response404 = $this->getResponse404();
             if ($response404 === null) {
-                throw new RouterMatchException('No 404 route is specified in the router');
+                throw new RouterMatchException('No 404 response is specified in the router');
             }
 
             return $response404;
@@ -138,7 +195,7 @@ class Router implements RequestHandlerInterface
         $params = $this->matchParams($route, $pathParts);
 
         // callable could be DI
-        if (is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
+        if ($this->getContainer() !== null && is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
             $obj = $this->container->get($route->getCallable()[0]);
             $method = $route->getCallable()[1];
             $callable = [$obj, $method];
@@ -159,15 +216,17 @@ class Router implements RequestHandlerInterface
      */
     private function findMatch(string $path, array $pathParts, string $method): ?Route
     {
+        $routes = $this->getRoutes();
+
         // find direct match
-        foreach ($this->routes as $route) {
+        foreach ($routes as $route) {
             if ($route->getPath() === $path && in_array($method, $route->getMethods(), true)) {
                 return $route;
             }
         }
 
         // find match with wildcard(s)
-        foreach ($this->routes as $route) {
+        foreach ($routes as $route) {
             if ($route->hasWildcard() && in_array($method, $route->getMethods(), true)) {
                 $parts = $route->getRouteParts();
                 $matches = true;
@@ -187,7 +246,7 @@ class Router implements RequestHandlerInterface
                         continue;
                     }
 
-                    // if the part is not a wildcard is does have to match
+                    // if the part is not a wildcard it does have to match
                     if ($part->getString() !== $pathPart) {
                         $matches = false;
                         break;

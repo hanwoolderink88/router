@@ -7,32 +7,32 @@ class Route
     /**
      * @var string[]
      */
-    private array $methods;
+    protected array $methods;
 
     /**
      * @var string
      */
-    private string $path;
+    protected string $path;
 
     /**
      * @var RoutePart[]
      */
-    private array $routeParts = [];
+    protected array $routeParts = [];
 
     /**
      * @var bool
      */
-    private bool $wildcard;
+    protected bool $wildcard;
 
     /**
      * @var string
      */
-    private string $name;
+    protected string $name;
 
     /**
      * @var callable
      */
-    private $callable;
+    protected $callable;
 
     /**
      * Route constructor.

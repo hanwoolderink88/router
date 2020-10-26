@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use HanWoolderink88\Container\Container;
 use Hanwoolderink88\Router\Route;
 use Hanwoolderink88\Router\Router;
+use Hanwoolderink88\Router\RouterMatchException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 
@@ -17,12 +18,9 @@ class RouterTest extends TestCase
         $router = new Router();
 
         $route = new Route(
-            '/',
-            'home',
-            ['GET'],
-            function () {
-                return new Response(200, [], 'jhie');
-            }
+            '/', 'home', ['GET'], function () {
+            return new Response(200, [], 'jhie');
+        }
         );
         $router->addRoute($route);
 
@@ -90,6 +88,41 @@ class RouterTest extends TestCase
         $this->assertEquals($expect, $responseBody, 'not matching response bodies');
     }
 
+    public function testIncorrectRouteConfig(): void
+    {
+        $container = new Container();
+        $router = new Router();
+        $router->setContainer($container);
+
+        $route = new Route('/{hi}', 'home', ['GET'], [FooBar2::class, 'homePage']);
+        $router->addRoute($route);
+
+        $this->expectException(RouterMatchException::class);
+        $request = new ServerRequest('GET', '/foobar');
+        $router->handle($request);
+    }
+
+    public function test404Routing(): void
+    {
+        // assert 1: match response of 404
+        $router = new Router();
+        $router->setResponse404(new Response(404, [], 'HTTP 404: not found'));
+        $request = new ServerRequest('GET', '/');
+        $match = $router->handle($request);
+        $this->assertEquals('HTTP 404: not found', $match->getBody()->__toString(), '404 body does not match');
+
+        // assert 2: remove route
+        $router->addRoute(new Route('/', 'testRoute', ['GET'], [Controller::class, 'homePage']));
+        $router->removeRouteByName('testRoute');
+        $match2 = $router->handle($request);
+        $this->assertEquals('HTTP 404: not found', $match2->getBody()->__toString(), '404 body does not match');
+
+        // assert 3: exception when no 404 response is set
+        $router = new Router();
+        $this->expectException(RouterMatchException::class);
+        $router->handle($request);
+    }
+
     /**
      * @param string $hi
      * @param string $id
@@ -122,6 +155,13 @@ class Controller
     public function homePage(string $hi)
     {
         return new Response(200, [], json_encode(['hi' => $hi, 'foo' => $this->testDi->foo()]));
+    }
+}
+
+class FooBar2 {
+    public function homePage(TestDi $testDi, string $hi)
+    {
+        return new Response(200, [], json_encode(['hi' => $hi, 'foo' => $testDi->foo()]));
     }
 }
 
