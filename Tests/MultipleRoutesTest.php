@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+namespace Tests;
+
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hanwoolderink88\Router\Route;
@@ -17,7 +19,7 @@ class MultipleRoutesTest extends TestCase
         $router = $this->createRouterWithRestRoutes();
 
         // check if the total count matches and for each route if the response matches
-        $this->assertEquals(6, count($router->getRoutes()), 'route count does not match');
+        $this->assertEquals(6, count($router->getRouteHandler()->getRoutes()), 'route count does not match');
         $this->assertEquals('homepage', $this->cr($router, 'GET', '/'), sprintf($msg, 'homePage'));
         $this->assertEquals('usersList', $this->cr($router, 'GET', '/users'), sprintf($msg, 'userList'));
         $this->assertEquals('usersAdd', $this->cr($router, 'POST', '/users'), sprintf($msg, 'usersAdd'));
@@ -51,7 +53,7 @@ class MultipleRoutesTest extends TestCase
         ];
 
         $router = new Router();
-        $router->setRoutes($routes);
+        $router->getRouteHandler()->setRoutes($routes);
 
         $this->expectException(RouterMatchException::class);
         $request = new ServerRequest('GET', '/');
@@ -67,7 +69,7 @@ class MultipleRoutesTest extends TestCase
 
         $router = new Router();
         $this->expectException(RouterAddRouteException::class);
-        $router->setRoutes($routes);
+        $router->getRouteHandler()->setRoutes($routes);
     }
 
     private function createRouterWithRestRoutes()
@@ -82,7 +84,7 @@ class MultipleRoutesTest extends TestCase
         ];
 
         $router = new Router();
-        $router->setRoutes($routes);
+        $router->getRouteHandler()->setRoutes($routes);
 
         return $router;
     }

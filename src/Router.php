@@ -15,9 +15,9 @@ use function in_array;
 class Router implements RequestHandlerInterface
 {
     /**
-     * @var Route[]
+     * @var RouteHandler
      */
-    protected array $routes = [];
+    protected RouteHandler $routeHandler;
 
     /**
      * @var ResponseInterface|null
@@ -30,106 +30,19 @@ class Router implements RequestHandlerInterface
     protected ?ContainerInterface $container;
 
     /**
-     * @return Route[]
+     * Router constructor.
      */
-    public function getRoutes(): array
+    public function __construct()
     {
-        return $this->routes;
+        $this->routeHandler = new RouteHandler();
     }
 
     /**
-     * @param Route[] $routes
-     * @return Router
-     * @throws RouterAddRouteException
+     * @return RouteHandler
      */
-    public function setRoutes(array $routes): Router
+    public function getRouteHandler(): RouteHandler
     {
-        $this->routes = [];
-
-        $this->addRoutes($routes);
-
-        return $this;
-    }
-
-    /**
-     * @param Route[] $routes
-     * @return $this
-     * @throws RouterAddRouteException
-     */
-    public function addRoutes(array $routes): Router
-    {
-        foreach ($routes as $route) {
-            $this->addRoute($route);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param Route $route
-     * @return $this
-     * @throws RouterAddRouteException
-     */
-    public function addRoute(Route $route): self
-    {
-        $routes = $this->getRoutes();
-        foreach ($routes as $registeredRoute) {
-            $sharedMethods = array_intersect($route->getMethods(), $registeredRoute->getMethods());
-            if ($registeredRoute->getPath() === $route->getPath() && count($sharedMethods) > 0) {
-                throw new RouterAddRouteException("route with path \"/{$route->getPath()}\" already exists");
-            }
-
-            // overwrite/remove routes with the same name
-            if ($registeredRoute->getName() === $route->getName()) {
-                $this->removeRoute($registeredRoute);
-            }
-        }
-
-        $this->routes[] = $route;
-
-        return $this;
-    }
-
-    /**
-     * @param Route $route
-     * @return $this
-     */
-    public function removeRoute(Route $route): self
-    {
-        $max = count($this->routes);
-        for ($i = 0; $i < $max; $i++) {
-            $foundRoute = $this->routes[$i];
-            if ($foundRoute->getName() === $route->getName()) {
-                unset($this->routes[$i]);
-                reset($this->routes);
-
-                // as names are unique we can break;
-                break;
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string $name
-     * @return $this
-     */
-    public function removeRouteByName(string $name): self
-    {
-        $max = count($this->routes);
-        for ($i = 0; $i < $max; $i++) {
-            $foundRoute = $this->routes[$i];
-            if ($foundRoute->getName() === $name) {
-                unset($this->routes[$i]);
-                reset($this->routes);
-
-                // as names are unique we can break;
-                break;
-            }
-        }
-
-        return $this;
+        return $this->routeHandler;
     }
 
     /**
@@ -219,8 +132,23 @@ class Router implements RequestHandlerInterface
      */
     private function findMatch(string $path, array $pathParts, string $method): ?Route
     {
-        $routes = $this->getRoutes();
+        $routes = $this->routeHandler->getRoutes();
+        $match = $this->findDirectMatch($path, $method, $routes);
+        if ($match === null) {
+            $match = $this->findWildcardMatch($pathParts, $method, $routes);
+        }
 
+        return $match;
+    }
+
+    /**
+     * @param string $path
+     * @param string $method
+     * @param Route[] $routes
+     * @return Route|null
+     */
+    private function findDirectMatch(string $path, string $method, array $routes): ?Route
+    {
         // find direct match
         foreach ($routes as $route) {
             if ($route->getPath() === $path && in_array($method, $route->getMethods(), true)) {
@@ -228,6 +156,17 @@ class Router implements RequestHandlerInterface
             }
         }
 
+        return null;
+    }
+
+    /**
+     * @param string[] $pathParts
+     * @param string $method
+     * @param Route[] $routes
+     * @return mixed|null
+     */
+    private function findWildcardMatch(array $pathParts, string $method, array $routes)
+    {
         // find match with wildcard(s)
         foreach ($routes as $route) {
             if ($route->hasWildcard() && in_array($method, $route->getMethods(), true)) {

@@ -23,7 +23,7 @@ class RouterTest extends TestCase
             return new Response(200, [], 'jhie');
         }
         );
-        $router->addRoute($route);
+        $router->getRouteHandler()->addRoute($route);
 
         $request = new ServerRequest('GET', '/');
         $response = $router->handle($request);
@@ -38,7 +38,7 @@ class RouterTest extends TestCase
         $router = new Router();
 
         $route = new Route('/{id}/{hi}', 'home', ['GET'], [$this, 'routerResponse']);
-        $router->addRoute($route);
+        $router->getRouteHandler()->addRoute($route);
 
         $request = new ServerRequest('GET', '/test/han');
         $response = $router->handle($request);
@@ -58,7 +58,7 @@ class RouterTest extends TestCase
         $router->setContainer($container);
 
         $route = new Route('/', 'home', ['GET'], [$this, 'routerResponseDi']);
-        $router->addRoute($route);
+        $router->getRouteHandler()->addRoute($route);
 
         $request = new ServerRequest('GET', '/');
         $response = $router->handle($request);
@@ -79,7 +79,7 @@ class RouterTest extends TestCase
         $router->setContainer($container);
 
         $route = new Route('/{hi}', 'home', ['GET'], [Controller::class, 'homePage']);
-        $router->addRoute($route);
+        $router->getRouteHandler()->addRoute($route);
 
         $request = new ServerRequest('GET', '/jhie');
         $response = $router->handle($request);
@@ -96,7 +96,7 @@ class RouterTest extends TestCase
         $router->setContainer($container);
 
         $route = new Route('/{hi}', 'home', ['GET'], [FooBar2::class, 'homePage']);
-        $router->addRoute($route);
+        $router->getRouteHandler()->addRoute($route);
 
         $this->expectException(RouterMatchException::class);
         $request = new ServerRequest('GET', '/foobar');
@@ -113,8 +113,8 @@ class RouterTest extends TestCase
         $this->assertEquals('HTTP 404: not found', $match->getBody()->__toString(), '404 body does not match');
 
         // assert 2: remove route
-        $router->addRoute(new Route('/', 'testRoute', ['GET'], [Controller::class, 'homePage']));
-        $router->removeRouteByName('testRoute');
+        $router->getRouteHandler()->addRoute(new Route('/', 'testRoute', ['GET'], [Controller::class, 'homePage']));
+        $router->getRouteHandler()->removeRouteByName('testRoute');
         $match2 = $router->handle($request);
         $this->assertEquals('HTTP 404: not found', $match2->getBody()->__toString(), '404 body does not match');
 
@@ -159,7 +159,8 @@ class Controller
     }
 }
 
-class FooBar2 {
+class FooBar2
+{
     public function homePage(TestDi $testDi, string $hi)
     {
         return new Response(200, [], json_encode(['hi' => $hi, 'foo' => $testDi->foo()]));
