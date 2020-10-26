@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Hanwoolderink88\Router;
 
@@ -175,7 +176,7 @@ class Router implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         // standardise path
-        $path = rtrim(ltrim($request->getUri(), '/'), '/');
+        $path = rtrim(ltrim($request->getUri()->getPath(), '/'), '/');
         $pathParts = explode('/', $path);
 
         // Find a matching route
