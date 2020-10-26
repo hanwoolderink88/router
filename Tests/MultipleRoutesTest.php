@@ -18,13 +18,13 @@ class MultipleRoutesTest extends TestCase
 
         // check if the total count matches and for each route if the response matches
         $this->assertEquals(6, count($router->getRoutes()), 'route count does not match');
-        $this->assertEquals('homepage', $this->cr($router, 'GET', '/'), sprintf($msg, ['homePage']));
-        $this->assertEquals('usersList', $this->cr($router, 'GET', '/users'), sprintf($msg, ['userList']));
-        $this->assertEquals('usersAdd', $this->cr($router, 'POST', '/users'), sprintf($msg, ['usersAdd']));
-        $this->assertEquals('usersView', $this->cr($router, 'GET', '/users/1'), sprintf($msg, ['usersView']));
-        $this->assertEquals('usersEdit', $this->cr($router, 'PUT', '/users/1'), sprintf($msg, ['usersEdit']));
-        $this->assertEquals('usersEdit', $this->cr($router, 'PATCH', '/users/1'), sprintf($msg, ['usersEdit']));
-        $this->assertEquals('usersDelete', $this->cr($router, 'DELETE', '/users/1'), sprintf($msg, ['usersDelete']));
+        $this->assertEquals('homepage', $this->cr($router, 'GET', '/'), sprintf($msg, 'homePage'));
+        $this->assertEquals('usersList', $this->cr($router, 'GET', '/users'), sprintf($msg, 'userList'));
+        $this->assertEquals('usersAdd', $this->cr($router, 'POST', '/users'), sprintf($msg, 'usersAdd'));
+        $this->assertEquals('usersView', $this->cr($router, 'GET', '/users/1'), sprintf($msg, 'usersView'));
+        $this->assertEquals('usersEdit', $this->cr($router, 'PUT', '/users/1'), sprintf($msg, 'usersEdit'));
+        $this->assertEquals('usersEdit', $this->cr($router, 'PATCH', '/users/1'), sprintf($msg, 'usersEdit'));
+        $this->assertEquals('usersDelete', $this->cr($router, 'DELETE', '/users/1'), sprintf($msg, 'usersDelete'));
     }
 
     public function testRouteNotFoundLong():void
