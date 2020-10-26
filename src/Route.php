@@ -39,7 +39,7 @@ class Route
      * @param string $path
      * @param string $name
      * @param string[] $methods
-     * @param string|object|array $callable
+     * @param callable $callable
      */
     public function __construct(string $path, string $name, array $methods, callable $callable)
     {
