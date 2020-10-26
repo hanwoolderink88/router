@@ -16,9 +16,14 @@ class RouterTest extends TestCase
     {
         $router = new Router();
 
-        $route = new Route('/', 'home', ['GET'], function () {
-            return new Response(200, [], 'jhie');
-        });
+        $route = new Route(
+            '/',
+            'home',
+            ['GET'],
+            function () {
+                return new Response(200, [], 'jhie');
+            }
+        );
         $router->addRoute($route);
 
         $request = new ServerRequest('GET', '/');
@@ -64,6 +69,27 @@ class RouterTest extends TestCase
         $this->assertEquals($expect, $responseBody, 'not matching response bodies');
     }
 
+    public function testDiController(): void
+    {
+        $container = new Container();
+        $container->addServiceReference(TestDi::class);
+        $container->addServiceReference(Controller::class);
+        $container->buildIndex();
+
+        $router = new Router();
+        $router->setContainer($container);
+
+        $route = new Route('/{hi}', 'home', ['GET'], [Controller::class, 'homePage']);
+        $router->addRoute($route);
+
+        $request = new ServerRequest('GET', '/jhie');
+        $response = $router->handle($request);
+        $responseBody = $response->getBody()->__tostring();
+
+        $expect = json_encode(['hi' => 'jhie', 'foo' => 'bar']);
+        $this->assertEquals($expect, $responseBody, 'not matching response bodies');
+    }
+
     /**
      * @param string $hi
      * @param string $id
@@ -84,7 +110,23 @@ class RouterTest extends TestCase
     }
 }
 
-class TestDi {
+class Controller
+{
+    private TestDi $testDi;
+
+    public function __construct(TestDi $testDi)
+    {
+        $this->testDi = $testDi;
+    }
+
+    public function homePage(string $hi)
+    {
+        return new Response(200, [], json_encode(['hi' => $hi, 'foo' => $this->testDi->foo()]));
+    }
+}
+
+class TestDi
+{
     public function foo(): string
     {
         return 'bar';

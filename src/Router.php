@@ -109,6 +109,12 @@ class Router implements RequestHandlerInterface
         return $this;
     }
 
+    /**
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws ReflectionException
+     * @throws RouterMatchException
+     */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         // standardise path
@@ -131,8 +137,18 @@ class Router implements RequestHandlerInterface
         // Param matching for wildcards and DI
         $params = $this->matchParams($route, $pathParts);
 
+        // callable could be DI
+        if (is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
+            $obj = $this->container->get($route->getCallable()[0]);
+            $method = $route->getCallable()[1];
+            $callable = [$obj, $method];
+        }
+
+        // if not found by DI
+        $callable = $callable ?? $route->getCallable();
+
         // call the callback function of the matched route with the
-        return call_user_func_array($route->getCallable(), $params);
+        return call_user_func_array($callable, $params);
     }
 
     /**
