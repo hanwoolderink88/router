@@ -1,6 +1,7 @@
 .idea/
 vendor/
 Tests/html
+Tests/clover.xml
 
 docker-compose.yml
 .phpunit.result.cache

@@ -1,6 +1,14 @@
 build:
     environment:
         php: 7.4.11
+    nodes:
+        coverage:
+            tests:
+                override:
+                    -   command: composer unit-coverage-clover
+                        coverage:
+                            file: Tests/clover.xml
+                            format: clover
 filter:
     excluded_paths: [ vendor/*, Tests/* ]
 checks:
