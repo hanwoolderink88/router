@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests;
+namespace Hanwoolderink88\Router\Tests;
 
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
@@ -72,13 +72,13 @@ class RouterTest extends TestCase
     {
         $container = new Container();
         $container->addServiceReference(TestDi::class);
-        $container->addServiceReference(Controller::class);
+        $container->addServiceReference(Controller2::class);
         $container->buildIndex();
 
         $router = new Router();
         $router->setContainer($container);
 
-        $route = new Route('/{hi}', 'home', ['GET'], [Controller::class, 'homePage']);
+        $route = new Route('/{hi}', 'home', ['GET'], [Controller2::class, 'homePage']);
         $router->getRouteHandler()->addRoute($route);
 
         $request = new ServerRequest('GET', '/jhie');
@@ -113,7 +113,7 @@ class RouterTest extends TestCase
         $this->assertEquals('HTTP 404: not found', $match->getBody()->__toString(), '404 body does not match');
 
         // assert 2: remove route
-        $router->getRouteHandler()->addRoute(new Route('/', 'testRoute', ['GET'], [Controller::class, 'homePage']));
+        $router->getRouteHandler()->addRoute(new Route('/', 'testRoute', ['GET'], [Controller2::class, 'homePage']));
         $router->getRouteHandler()->removeRouteByName('testRoute');
         $match2 = $router->handle($request);
         $this->assertEquals('HTTP 404: not found', $match2->getBody()->__toString(), '404 body does not match');
@@ -144,7 +144,7 @@ class RouterTest extends TestCase
     }
 }
 
-class Controller
+class Controller2
 {
     private TestDi $testDi;
 
