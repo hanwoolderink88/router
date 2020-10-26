@@ -39,9 +39,9 @@
             "@unit",
             "@sniff"
         ],
-        "unit": "vendor/bin/phpunit Tests",
-        "unit-coverage-clover": "vendor/bin/phpunit --coverage-clover Tests/clover.xml Tests",
-        "unit-coverage": "vendor/bin/phpunit --coverage-html Tests/html Tests",
+        "unit": "vendor/bin/phpunit -c phpunit.xml Tests",
+        "unit-coverage-clover": "vendor/bin/phpunit -c phpunit.xml --coverage-clover Tests/clover.xml Tests",
+        "unit-coverage": "vendor/bin/phpunit -c phpunit.xml --coverage-html Tests/html Tests",
         "sniff": "vendor/bin/phpcs --standard=ruleset.xml src",
         "sniff-fix": "vendor/bin/phpcbf --standard=ruleset.xml src",
         "stan": "vendor/bin/phpstan analyse --level 6 src"

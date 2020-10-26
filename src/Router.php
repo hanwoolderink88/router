@@ -199,10 +199,12 @@ class Router implements RequestHandlerInterface
             $obj = $this->getContainer()->get($route->getCallable()[0]);
             $method = $route->getCallable()[1];
             $callable = [$obj, $method];
+        } elseif (is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
+            $className = $route->getCallable()[0];
+            $callable = [new $className(), $route->getCallable()[1]];
+        } else {
+            $callable = $route->getCallable();
         }
-
-        // if not found by DI
-        $callable = $callable ?? $route->getCallable();
 
         // call the callback function of the matched route with the
         return call_user_func_array($callable, $params);

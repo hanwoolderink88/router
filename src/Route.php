@@ -30,7 +30,7 @@ class Route
     protected string $name;
 
     /**
-     * @var mixed
+     * @var string|string[]|callable
      */
     protected $callable;
 
@@ -78,7 +78,7 @@ class Route
     }
 
     /**
-     * @return mixed
+     * @return string|string[]|callable
      */
     public function getCallable()
     {
