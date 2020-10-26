@@ -57,7 +57,7 @@ class Router implements RequestHandlerInterface
      */
     public function addRoutes(array $routes): Router
     {
-        foreach ($routes as $route){
+        foreach ($routes as $route) {
             $this->addRoute($route);
         }
 
@@ -196,7 +196,7 @@ class Router implements RequestHandlerInterface
 
         // callable could be DI
         if ($this->getContainer() !== null && is_array($route->getCallable()) && is_string($route->getCallable()[0])) {
-            $obj = $this->container->get($route->getCallable()[0]);
+            $obj = $this->getContainer()->get($route->getCallable()[0]);
             $method = $route->getCallable()[1];
             $callable = [$obj, $method];
         }

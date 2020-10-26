@@ -39,9 +39,9 @@ class Route
      * @param string $path
      * @param string $name
      * @param string[] $methods
-     * @param string|array|object|callable $callable
+     * @param callable $callable
      */
-    public function __construct(string $path, string $name, array $methods, $callable)
+    public function __construct(string $path, string $name, array $methods, callable $callable)
     {
         $this->path = rtrim(ltrim($path, '/'), '/');
         $this->name = $name ?? $this->path;
