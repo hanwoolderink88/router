@@ -30,7 +30,7 @@ class Route
     protected string $name;
 
     /**
-     * @var callable
+     * @var mixed
      */
     protected $callable;
 
@@ -39,9 +39,9 @@ class Route
      * @param string $path
      * @param string $name
      * @param string[] $methods
-     * @param callable $callable
+     * @param mixed $callable
      */
-    public function __construct(string $path, string $name, array $methods, callable $callable)
+    public function __construct(string $path, string $name, array $methods, $callable)
     {
         $this->path = rtrim(ltrim($path, '/'), '/');
         $this->name = $name ?? $this->path;
@@ -78,9 +78,9 @@ class Route
     }
 
     /**
-     * @return callable
+     * @return mixed
      */
-    public function getCallable(): callable
+    public function getCallable()
     {
         return $this->callable;
     }
