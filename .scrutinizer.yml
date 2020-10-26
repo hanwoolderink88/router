@@ -1,14 +1,6 @@
 build:
     environment:
         php: 7.4.11
-    nodes:
-        coverage:
-            tests:
-                override:
-                    -   command: composer unit-coverage
-                        coverage:
-                            file: phpunit.xml
-                            format: clover
 filter:
     excluded_paths: [ vendor/*, Tests/* ]
 checks:
