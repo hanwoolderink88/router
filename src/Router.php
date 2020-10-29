@@ -171,46 +171,57 @@ class Router implements RequestHandlerInterface
      * @param string[] $pathParts
      * @param string $method
      * @param Route[] $routes
-     * @return mixed|null
+     * @return Route|null
      */
-    private function findWildcardMatch(array $pathParts, string $method, array $routes)
+    private function findWildcardMatch(array $pathParts, string $method, array $routes): ?Route
     {
         // find match with wildcard(s)
+        $pathPartCount = count($pathParts);
         foreach ($routes as $route) {
             if ($route->hasWildcard() && in_array($method, $route->getMethods(), true)) {
                 $parts = $route->getRouteParts();
-                $matches = true;
-                $i = 0;
-                foreach ($pathParts as $pathPart) {
-                    $part = $parts[$i] ?? null;
-                    $i++;
+                $partsCount = count($parts);
 
-                    // if the part is not found it means that the request uri has more parts i.e. no match
-                    if ($part === null) {
-                        $matches = false;
-                        break;
-                    }
-
-                    // if the part is a wildcard it does not have to match
-                    if ($part->isWildcard()) {
-                        continue;
-                    }
-
-                    // if the part is not a wildcard it does have to match
-                    if ($part->getString() !== $pathPart) {
-                        $matches = false;
-                        break;
-                    }
+                // if the number of parts in both uri's is not the same it cannot be a match
+                if ($partsCount !== $pathPartCount) {
+                    continue;
                 }
 
-                // if the boolean is still on true we have a match
-                if ($matches === true) {
+                // if all non wildcard parts match we have match
+                if ($this->uriPartsMatch($pathParts, $parts)) {
                     return $route;
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * @param string[] $pathParts
+     * @param RoutePart[] $parts
+     * @return bool
+     */
+    private function uriPartsMatch(array $pathParts, array $parts): bool
+    {
+        $i = 0;
+        foreach ($pathParts as $pathPart) {
+            $part = $parts[$i] ?? null;
+            $i++;
+
+            // if the part is a wildcard it does not have to match
+            if ($part->isWildcard()) {
+                continue;
+            }
+
+            // if the parts mismatch we do not have a match
+            if ($part->getString() !== $pathPart) {
+                return false;
+            }
+        }
+
+        // if all is good we have a match
+        return true;
     }
 
     /**

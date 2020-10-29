@@ -17,6 +17,7 @@ class MultipleRoutesTest extends TestCase
     {
         $msg = 'Response for %s does not match';
         $router = $this->createRouterWithRestRoutes();
+        $router->setResponse404(new Response(200, [], '404'));
 
         // check if the total count matches and for each route if the response matches
         $this->assertEquals(6, count($router->getRouteHandler()->getRoutes()), 'route count does not match');

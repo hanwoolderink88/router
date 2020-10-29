@@ -39,6 +39,7 @@ class RouterTest extends TestCase
 
         $route = new Route('/{id}/{hi}', 'home', ['GET'], [$this, 'routerResponse']);
         $router->getRouteHandler()->addRoute($route);
+        $router->setResponse404(new Response(200, [], '404'));
 
         $request = new ServerRequest('GET', '/test/han');
         $response = $router->handle($request);
@@ -56,6 +57,7 @@ class RouterTest extends TestCase
 
         $router = new Router();
         $router->setContainer($container);
+        $router->setResponse404(new Response(200, [], '404'));
 
         $route = new Route('/', 'home', ['GET'], [$this, 'routerResponseDi']);
         $router->getRouteHandler()->addRoute($route);
@@ -77,6 +79,7 @@ class RouterTest extends TestCase
 
         $router = new Router();
         $router->setContainer($container);
+        $router->setResponse404(new Response(200, [], '404'));
 
         $route = new Route('/{hi}', 'home', ['GET'], [Controller2::class, 'homePage']);
         $router->getRouteHandler()->addRoute($route);
