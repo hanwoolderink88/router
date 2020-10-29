@@ -133,6 +133,27 @@ class Router implements RequestHandlerInterface
     }
 
     /**
+     * @param string $routeName
+     * @param string[] $params
+     * @param bool $permanent
+     * @throws RouterMatchException
+     */
+    public function redirect(string $routeName, array $params = [], bool $permanent = false): void
+    {
+        $route = $this->routeHandler->findRouteByName($routeName);
+
+        if ($route === null) {
+            throw new RouterMatchException('No route found to redirect to with name ' . $routeName);
+        }
+
+        $http = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+        $host = $_SERVER['HTTP_HOST'];
+        $uri = $route->getPathFilledIn($params);
+
+        header("Location: {$http}://{$host}/{$uri}", true, $permanent ? 301 : 302);
+    }
+
+    /**
      * @param string $path
      * @param string[] $pathParts
      * @param string $method

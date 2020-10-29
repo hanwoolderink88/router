@@ -111,4 +111,19 @@ class RouteHandler
 
         return $this;
     }
+
+    /**
+     * @param string $routeName
+     * @return Route|null
+     */
+    public function findRouteByName(string $routeName): ?Route
+    {
+        foreach ($this->routes as $route) {
+            if ($route->getName() === $routeName) {
+                return $route;
+            }
+        }
+
+        return null;
+    }
 }

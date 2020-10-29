@@ -71,6 +71,35 @@ class Route
     }
 
     /**
+     * @param string[] $params
+     * @return string
+     * @throws RouterMatchException
+     */
+    public function getPathFilledIn(array $params): string
+    {
+        if ($this->hasWildcard()) {
+            $uriParts = [];
+            $parts = $this->getRouteParts();
+            foreach ($parts as $part) {
+                if ($part->isWildcard()) {
+                    $value = $params[$part->getString()] ?? null;
+                    if ($value === null) {
+                        throw new RouterMatchException("Redirect expects parameter {$part->getString()}");
+                    }
+                    $uriParts[] = $value;
+                } else {
+                    $uriParts[] = $part->getString();
+                }
+            }
+            $uri = implode('/', $uriParts);
+        } else {
+            $uri = $this->getPath();
+        }
+
+        return $uri;
+    }
+
+    /**
      * @return string
      */
     public function getName(): string
