@@ -105,6 +105,18 @@ class Router implements RequestHandlerInterface
             return $response404;
         }
 
+        return $this->callCallback($route, $pathParts);
+    }
+
+    /**
+     * @param Route $route
+     * @param string[] $pathParts
+     * @return ResponseInterface
+     * @throws ReflectionException
+     * @throws RouterMatchException
+     */
+    private function callCallback(Route $route, array $pathParts): ResponseInterface
+    {
         // Param matching for wildcards and DI
         $params = $this->matchParams($route, $pathParts);
         $callable = null;
@@ -136,9 +148,11 @@ class Router implements RequestHandlerInterface
      * @param string $routeName
      * @param string[] $params
      * @param bool $permanent
+     * @return ResponseInterface
+     * @throws ReflectionException
      * @throws RouterMatchException
      */
-    public function redirect(string $routeName, array $params = [], bool $permanent = false): void
+    public function redirect(string $routeName, array $params = [], bool $permanent = false): ResponseInterface
     {
         $route = $this->routeHandler->findRouteByName($routeName);
 
@@ -151,6 +165,8 @@ class Router implements RequestHandlerInterface
         $uri = $route->getPathFilledIn($params);
 
         header("Location: {$http}://{$host}/{$uri}", true, $permanent ? 301 : 302);
+
+        return $this->callCallback($route, explode('/', $uri));
     }
 
     /**
